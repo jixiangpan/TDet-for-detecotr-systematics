@@ -77,9 +77,12 @@ public:
   TH1D *h1_Var_wiSel;
   
   TH1D *h1_weight;
-
+  TH1D *h1_sampling;
+  TH1D *h1_diff_weight;
+  
   map<int, TString>map_total_index_string;
-  map<int, double>map_total_index_Erec;
+  map<TString, double>map_total_index_CV_Erec;
+  map<TString, double>map_total_index_Var_Erec;
   map<TString, double>map_CV_wiSel_Erec;
   map<TString, double>map_Var_wiSel_Erec;
 };
@@ -132,31 +135,37 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
 
   roostr = "h1_weight";
   h1_weight = new TH1D(roostr, roostr, line_CV_a0, 0.5, line_CV_a0+0.5);
-  
-  ifstream InputFile_weight(file_CV, ios::in);
+  roostr = "h1_diff_weight";
+  h1_diff_weight = new TH1D(roostr, roostr, line_CV_a0, 0.5, line_CV_a0+0.5);
+
+  //// CV
+  ifstream InputFile_CV_weight(file_CV, ios::in);
   for(int idx=1; idx<=line_CV_a0; idx++) {
     
-    InputFile_weight >> entry >> run >> subrun >> event
-		     >> weight >> status >> post_generic >> numuCC
-		     >> nueBDT >> is_FC >> Erec >> Evis;
+    InputFile_CV_weight >> entry >> run >> subrun >> event
+			>> weight >> status >> post_generic >> numuCC
+			>> nueBDT >> is_FC >> Erec >> Evis;
     
     h1_weight->SetBinContent( idx, weight );
 
     roostr = TString::Format("%d_%d_%d", run, subrun, event);
     map_total_index_string[idx] = roostr;
-    map_total_index_Erec[idx] = Erec*1000;
-      
-    // if( weight<0.1 ) {
-    //   cout<<" check weight: "
-    // 	<< idx <<"\t"<< run <<"\t"<< subrun <<"\t"<< event
-    // 	<<"\t"<< weight <<"\t"<< status <<"\t"<< post_generic <<"\t"<< numuCC
-    // 	<<"\t"<< nueBDT <<"\t"<< is_FC <<"\t"
-    // 	<< Erec <<"\t"<< Evis
-    // 	<<endl;
-    // }
-    
+    map_total_index_CV_Erec[roostr] = Erec*1000;      
   }// idx
 
+  //// Var
+  ifstream InputFile_Var_weight(file_Var, ios::in);
+  for(int idx=1; idx<=line_Var_a0; idx++) {
+    
+    InputFile_Var_weight >> entry >> run >> subrun >> event
+			 >> weight >> status >> post_generic >> numuCC
+			 >> nueBDT >> is_FC >> Erec >> Evis;
+
+    roostr = TString::Format("%d_%d_%d", run, subrun, event);
+    map_total_index_Var_Erec[roostr] = Erec*1000;      
+  }// idx
+
+  ////
   int total_number_weighted = (int)( h1_weight->Integral() );
   cout<<TString::Format(" ---> Total number of events (weighted): %d", total_number_weighted)<<endl;
   
@@ -203,13 +212,12 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
   }// idx
   
   //////////////////////// Var
-  
   ifstream InputFile_Var_a1(file_Var, ios::in);
   for(int idx=1; idx<=line_Var_a0; idx++) {
     
     InputFile_Var_a1 >> entry >> run >> subrun >> event
-		    >> weight >> status >> post_generic >> numuCC >> nueBDT >> is_FC >> Erec >> Evis;
-    
+     		     >> weight >> status >> post_generic >> numuCC >> nueBDT >> is_FC >> Erec >> Evis;   
+
     Erec *= 1000;
     roostr = TString::Format("%d_%d_%d", run, subrun, event);
 
@@ -240,11 +248,11 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
     double content = 0;
 
     content = h1_CV_wiSel->GetBinContent(ibin);
-    content = ( (int)(content*10+0.5) )*1./10;
+    content = ( (int)(content*100+0.5) )*1./100;
     h1_CV_wiSel->SetBinContent(ibin, content);
     
     content = h1_Var_wiSel->GetBinContent(ibin);
-    content = ( (int)(content*10+0.5) )*1./10;
+    content = ( (int)(content*100+0.5) )*1./100;
     h1_Var_wiSel->SetBinContent(ibin, content);    
   }
 
@@ -252,39 +260,98 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
 
   TPrincipal principal_test(bins_basic, "ND");
   double *array_test = new double[bins_basic];
+  double *array_CV = new double[bins_basic];
+  double *array_Var = new double[bins_basic];
 
+  /// to check
+  roostr = "h1_sampling";
+  h1_sampling = new TH1D(roostr, roostr, line_CV_a0, 0.5, line_CV_a0+0.5);
+
+  double *array_mean_Var2CV = new double[bins_basic];  
+  double *array_total_CV_wiSel = new double[bins_basic];
+  double *array_total_Var_wiSel = new double[bins_basic];
+  for(int ibin=0; ibin<bins_basic; ibin++) {
+    array_mean_Var2CV[ibin] = 0;
+    array_total_CV_wiSel[ibin] = 0;
+    array_total_Var_wiSel[ibin] = 0;
+  }
   
+  ///
   for(int itoy=1; itoy<=ntoy; itoy++) {
 
     if( itoy%(ntoy/10)==0 ) cout<<TString::Format(" ---> processing toy: %4.2f, %6d", itoy*1./ntoy, itoy)<<endl;
     
     TRandom3 *rand3 = new TRandom3(0);
 
-    for(int ibin=0; ibin<bins_basic; ibin++) array_test[ibin] = 0;
+    for(int ibin=0; ibin<bins_basic; ibin++) {
+      array_test[ibin] = 0;
+      array_CV[ibin]   = 0;
+      array_Var[ibin]  = 0;
+    }
     
     for(int idx=1; idx<=total_number_weighted; idx++) {
 
+      //cout<<TString::Format(" ---> check: random %10.2f, global_idx %10d, Erec %8.2f, bin_index %2d", random, global_index, Erec, bin_index )<<endl;
+
+      /////////////////////////////////////////// un-common samples
+      /*
+      ///// CV
       double random = h1_weight->GetRandom();
       int global_index = h1_weight->FindBin( random );
       roostr = map_total_index_string[global_index];
-      double Erec = map_total_index_Erec[global_index];
-      int bin_index = h1_CV_noSel->FindBin( Erec );
+      double Erec = map_total_index_CV_Erec[roostr];
+      int bin_index = h1_CV_noSel->FindBin( Erec );      
+      if( bin_index>=1 && bin_index<=bins_basic ) {
+	int CV_count = 0;
+	if( map_CV_wiSel_Erec.find(roostr)!=map_CV_wiSel_Erec.end() ) CV_count++;
+	array_CV[bin_index-1] += CV_count;
+      }
 
-      if( bin_index<1 || bin_index>bins_basic ) {
-	//cout<<TString::Format(" ---> check: random %10.2f, global_idx %10d, Erec %8.2f, bin_index %2d", random, global_index, Erec, bin_index )<<endl;
-	continue;
-      }      
-      //cout<<TString::Format(" ---> check: random %10.2f, global_idx %10d, Erec %8.2f, bin_index %2d", random, global_index, Erec, bin_index )<<endl;
+      ///// Var
+      random = h1_weight->GetRandom();
+      global_index = h1_weight->FindBin( random );
+      roostr = map_total_index_string[global_index];
+      Erec = map_total_index_Var_Erec[roostr];
+      bin_index = h1_Var_noSel->FindBin( Erec );
+      if( bin_index>=1 && bin_index<=bins_basic ) {
+	int Var_count = 0;
+	if( map_Var_wiSel_Erec.find(roostr)!=map_Var_wiSel_Erec.end() ) Var_count++;
+	array_Var[bin_index-1] += Var_count;
+      }
+      */
       
-      int CV_count = 0;
-      int Var_count = 0;
-      if( map_CV_wiSel_Erec.find(roostr)!=map_CV_wiSel_Erec.end() ) CV_count++;
-      if( map_Var_wiSel_Erec.find(roostr)!=map_Var_wiSel_Erec.end() ) Var_count++;
-
-      array_test[bin_index-1] += (Var_count-CV_count);
+      /////////////////////////////////////////// common samples
+      double random = h1_weight->GetRandom();
+      int global_index = h1_weight->FindBin( random );
+      roostr = map_total_index_string[global_index];
+      h1_sampling->Fill( global_index );
+      
+      double CV_Erec = map_total_index_CV_Erec[roostr];
+      int CV_bin_index = h1_CV_noSel->FindBin( CV_Erec );            
+      if( CV_bin_index>=1 && CV_bin_index<=bins_basic ) {
+	int CV_count = 0;
+	if( map_CV_wiSel_Erec.find(roostr)!=map_CV_wiSel_Erec.end() ) CV_count++;
+	array_CV[CV_bin_index-1] += CV_count;
+	array_total_CV_wiSel[CV_bin_index-1] += CV_count;
+      }      
+      
+      double Var_Erec = map_total_index_Var_Erec[roostr];
+      int Var_bin_index = h1_Var_noSel->FindBin( Var_Erec );            
+      if( Var_bin_index>=1 && Var_bin_index<=bins_basic ) {
+	int Var_count = 0;
+	if( map_Var_wiSel_Erec.find(roostr)!=map_Var_wiSel_Erec.end() ) Var_count++;
+	array_Var[Var_bin_index-1] += Var_count;
+	array_total_Var_wiSel[Var_bin_index-1] += Var_count;
+      }            
       
     }// idx
 
+    for(int ibin=0; ibin<bins_basic; ibin++) {
+      array_test[ibin] = array_Var[ibin] - array_CV[ibin];
+      
+      array_mean_Var2CV[ibin] += ( array_Var[ibin] - array_CV[ibin] )/ntoy;
+    }
+    
     principal_test.AddRow( array_test );
 
     delete rand3;
@@ -302,9 +369,36 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
     }
   }
 
+  TVectorD *vector_mean = (TVectorD*)principal_test.GetMeanValues();
+  int size_vector = vector_mean->GetNoElements();
+  for(int idx=0; idx<size_vector; idx++) {
+    double val_mean = (*vector_mean)(idx);
+    double val_nominal = h1_Var_wiSel->GetBinContent(idx+1) - h1_CV_wiSel->GetBinContent(idx+1);
+    double val_diff = val_mean - val_nominal;
+    cout<<TString::Format(" check mean: bin %2d, nominal %8.2f, toy %8.2f, diff %8.2f",
+			  idx+1, val_nominal, val_mean, val_diff
+			  )<<endl;    
+  }
+
+  // for(int idx=0; idx<size_vector; idx++) {
+  //   cout<<TString::Format(" check content: bin %2d, CV %8.2f %8.2f, Var %8.2f %8.2f",
+  // 			  idx+1,
+  // 			  h1_CV_wiSel->GetBinContent(idx+1), array_total_CV_wiSel[idx]/ntoy,
+  // 			  h1_Var_wiSel->GetBinContent(idx+1), array_total_Var_wiSel[idx]/ntoy
+  // 			  )<<endl;
+  // }
+  
+  h1_diff_weight->Add( h1_weight, h1_sampling, 1, -1./ntoy );
+    
   ////////////////////////
   
   delete[] array_test;
+  delete[] array_CV;
+  delete[] array_Var;
+  
+  delete[] array_mean_Var2CV;
+  delete[] array_total_CV_wiSel;
+  delete[] array_total_Var_wiSel;
   
 }
 
@@ -313,7 +407,8 @@ void TDet::Clear()
   num_DetVar++;
 
   map_total_index_string.clear();
-  map_total_index_Erec.clear();  
+  map_total_index_CV_Erec.clear();
+  map_total_index_Var_Erec.clear();  
   map_CV_wiSel_Erec.clear();
   map_Var_wiSel_Erec.clear();
   
@@ -323,7 +418,9 @@ void TDet::Clear()
     h1_Var_noSel = NULL;
     h1_Var_wiSel = NULL;
     
-    h1_weight = NULL;    
+    h1_weight = NULL;
+    h1_sampling = NULL;
+    h1_diff_weight = NULL;
   }
   else {      
     delete h1_CV_noSel;
@@ -332,6 +429,8 @@ void TDet::Clear()
     delete h1_Var_wiSel;
     
     delete h1_weight;
+    delete h1_sampling;
+    delete h1_diff_weight;
   }
   
 }
@@ -369,7 +468,7 @@ void read_Tdet()
 
   det_test->Clear();
   
-  det_test->Exe("./data_det_syst_total/common_detvar/LYDown/numu_CV", "./data_det_syst_total/common_detvar/LYDown/numu_Var", 1, 1, 100);
+  det_test->Exe("./data_det_syst_total/common_detvar/LYDown/numu_CV", "./data_det_syst_total/common_detvar/LYDown/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/Recomb2/numu_CV", "./data_det_syst_total/common_detvar/Recomb2/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/SCE/numu_CV", "./data_det_syst_total/common_detvar/SCE/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/WireModThetaXZ/numu_CV", "./data_det_syst_total/common_detvar/WireModThetaXZ/numu_Var", 1, 1, 1000);
@@ -389,6 +488,26 @@ void read_Tdet()
   func_title_size(det_test->h1_weight, 0.05, 0.05, 0.05, 0.05);
   func_xy_title(det_test->h1_weight, "Event index", "Weight");
   det_test->h1_weight->GetXaxis()->SetNdivisions(506);
+
+  roostr = "canv_h1_sampling";
+  TCanvas *canv_h1_sampling = new TCanvas(roostr, roostr, 900, 650);
+  func_canv_margin(canv_h1_sampling, 0.15, 0.2,0.1,0.15);
+  det_test->h1_sampling->Draw();
+  det_test->h1_sampling->SetLineColor(kBlack);
+  //h1_sampling->SetLineStyle(7);
+  func_title_size(det_test->h1_sampling, 0.05, 0.05, 0.05, 0.05);
+  func_xy_title(det_test->h1_sampling, "Event index", "Weight");
+  det_test->h1_sampling->GetXaxis()->SetNdivisions(506);
+
+  roostr = "canv_h1_diff_weight";
+  TCanvas *canv_h1_diff_weight = new TCanvas(roostr, roostr, 900, 650);
+  func_canv_margin(canv_h1_diff_weight, 0.15, 0.2,0.1,0.15);
+  det_test->h1_diff_weight->Draw();
+  det_test->h1_diff_weight->SetLineColor(kBlack);
+  //h1_diff_weight->SetLineStyle(7);
+  func_title_size(det_test->h1_diff_weight, 0.05, 0.05, 0.05, 0.05);
+  func_xy_title(det_test->h1_diff_weight, "Event index", "Diff of Weight");
+  det_test->h1_diff_weight->GetXaxis()->SetNdivisions(506);
 
   ///////////
   
@@ -420,6 +539,16 @@ void read_Tdet()
 
   det_test->h1_CV_noSel->Draw("same axis");
 
+  TH1D *h1_diff_CV2Var = (TH1D*)det_test->h1_CV_wiSel->Clone("h1_diff_CV2Var");
+  h1_diff_CV2Var->Reset();
+  for(int ibin=1; ibin<=h1_diff_CV2Var->GetNbinsX(); ibin++) {
+    h1_diff_CV2Var->SetBinContent(ibin,
+    fabs(det_test->h1_CV_wiSel->GetBinContent(ibin)-det_test->h1_Var_wiSel->GetBinContent(ibin)) );
+  }
+  h1_diff_CV2Var->Draw("same hist text0");
+  h1_diff_CV2Var->SetLineColor(kBlue);
+  h1_diff_CV2Var->SetMarkerColor(kBlue);
+  
   ///////////
   
   roostr = "canv_matrix_cov_on_absdiff";
@@ -495,7 +624,7 @@ void read_Tdet()
   h2_correlation_on_absdiff->GetYaxis()->SetNdivisions(506);
 
   /////////////////////////////////////////
-
+  
   TCanvas *canv_sum = new TCanvas("canv_sum", "canv_sum", 1400, 1000);
   canv_sum->Divide(2,2);
 
@@ -507,7 +636,8 @@ void read_Tdet()
   det_test->h1_CV_wiSel->Draw("same hist text75");
   det_test->h1_Var_wiSel->Draw("same hist text15");
   det_test->h1_CV_noSel->Draw("same axis");
-
+  h1_diff_CV2Var->Draw("same hist text0");
+  
   TVirtualPad *pad_cov = canv_sum->cd(2);
   func_canv_margin(pad_cov, 0.15, 0.2,0.1,0.15);
   h2_cov_on_absdiff->Draw("colz text");
