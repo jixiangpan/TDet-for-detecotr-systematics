@@ -75,6 +75,8 @@ public:
   TH1D *h1_CV_wiSel;
   TH1D *h1_Var_noSel;
   TH1D *h1_Var_wiSel;
+  TH1D *h1_diff_Var2CV;
+  TH1D *h1_binomial_err;
   
   TH1D *h1_weight;
   TH1D *h1_sampling;
@@ -178,7 +180,9 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
   roostr = "h1_CV_wiSel"; h1_CV_wiSel = new TH1D(roostr, roostr, bins_basic, low_basic, hgh_basic);  
   roostr = "h1_Var_noSel"; h1_Var_noSel = new TH1D(roostr, roostr, bins_basic, low_basic, hgh_basic);
   roostr = "h1_Var_wiSel"; h1_Var_wiSel = new TH1D(roostr, roostr, bins_basic, low_basic, hgh_basic);
-
+  roostr = "h1_diff_Var2CV"; h1_diff_Var2CV = new TH1D(roostr, roostr, bins_basic, low_basic, hgh_basic);
+  roostr = "h1_binomial_err"; h1_binomial_err = new TH1D(roostr, roostr, bins_basic, low_basic, hgh_basic);
+    
   //////////////////////// CV
   
   ifstream InputFile_CV_a1(file_CV, ios::in);
@@ -245,17 +249,35 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
   ///////////////////////////////////////////////
 
   for(int ibin=1; ibin<=bins_basic; ibin++) {
-    double content = 0;
 
-    content = h1_CV_wiSel->GetBinContent(ibin);
-    content = ( (int)(content*100+0.5) )*1./100;
-    h1_CV_wiSel->SetBinContent(ibin, content);
+    double content_noSel_CV = 0;
+    content_noSel_CV = h1_CV_noSel->GetBinContent(ibin);
+    content_noSel_CV = ( (int)(content_noSel_CV*100+0.5) )*1./100;
+    h1_CV_noSel->SetBinContent(ibin, content_noSel_CV);
     
-    content = h1_Var_wiSel->GetBinContent(ibin);
-    content = ( (int)(content*100+0.5) )*1./100;
-    h1_Var_wiSel->SetBinContent(ibin, content);    
-  }
+    double content_noSel_Var = 0;
+    content_noSel_Var = h1_Var_noSel->GetBinContent(ibin);
+    content_noSel_Var = ( (int)(content_noSel_Var*100+0.5) )*1./100;
+    h1_Var_noSel->SetBinContent(ibin, content_noSel_Var);
+    
+    double content_wiSel_CV = 0;
+    content_wiSel_CV = h1_CV_wiSel->GetBinContent(ibin);
+    content_wiSel_CV = ( (int)(content_wiSel_CV*100+0.5) )*1./100;
+    h1_CV_wiSel->SetBinContent(ibin, content_wiSel_CV);
+    
+    double content_wiSel_Var = 0;
+    content_wiSel_Var = h1_Var_wiSel->GetBinContent(ibin);
+    content_wiSel_Var = ( (int)(content_wiSel_Var*100+0.5) )*1./100;
+    h1_Var_wiSel->SetBinContent(ibin, content_wiSel_Var);
+    
+    h1_diff_Var2CV->SetBinContent( ibin, fabs(content_wiSel_Var-content_wiSel_CV) );
 
+    double val_p = content_wiSel_CV/content_noSel_CV;
+    double val_err = sqrt(  content_noSel_CV*val_p*(1-val_p) );
+    val_err = ( (int)(val_err*100+0.5) )*1./100;
+    h1_binomial_err->SetBinContent(ibin, val_err);
+  }
+  
   /////////////////////////////////////////////// Calculate covariance matrix
 
   TPrincipal principal_test(bins_basic, "ND");
@@ -291,35 +313,6 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
     
     for(int idx=1; idx<=total_number_weighted; idx++) {
 
-      //cout<<TString::Format(" ---> check: random %10.2f, global_idx %10d, Erec %8.2f, bin_index %2d", random, global_index, Erec, bin_index )<<endl;
-
-      /////////////////////////////////////////// un-common samples
-      /*
-      ///// CV
-      double random = h1_weight->GetRandom();
-      int global_index = h1_weight->FindBin( random );
-      roostr = map_total_index_string[global_index];
-      double Erec = map_total_index_CV_Erec[roostr];
-      int bin_index = h1_CV_noSel->FindBin( Erec );      
-      if( bin_index>=1 && bin_index<=bins_basic ) {
-	int CV_count = 0;
-	if( map_CV_wiSel_Erec.find(roostr)!=map_CV_wiSel_Erec.end() ) CV_count++;
-	array_CV[bin_index-1] += CV_count;
-      }
-
-      ///// Var
-      random = h1_weight->GetRandom();
-      global_index = h1_weight->FindBin( random );
-      roostr = map_total_index_string[global_index];
-      Erec = map_total_index_Var_Erec[roostr];
-      bin_index = h1_Var_noSel->FindBin( Erec );
-      if( bin_index>=1 && bin_index<=bins_basic ) {
-	int Var_count = 0;
-	if( map_Var_wiSel_Erec.find(roostr)!=map_Var_wiSel_Erec.end() ) Var_count++;
-	array_Var[bin_index-1] += Var_count;
-      }
-      */
-      
       /////////////////////////////////////////// common samples
       double random = h1_weight->GetRandom();
       int global_index = h1_weight->FindBin( random );
@@ -380,14 +373,6 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
 			  )<<endl;    
   }
 
-  // for(int idx=0; idx<size_vector; idx++) {
-  //   cout<<TString::Format(" check content: bin %2d, CV %8.2f %8.2f, Var %8.2f %8.2f",
-  // 			  idx+1,
-  // 			  h1_CV_wiSel->GetBinContent(idx+1), array_total_CV_wiSel[idx]/ntoy,
-  // 			  h1_Var_wiSel->GetBinContent(idx+1), array_total_Var_wiSel[idx]/ntoy
-  // 			  )<<endl;
-  // }
-  
   h1_diff_weight->Add( h1_weight, h1_sampling, 1, -1./ntoy );
     
   ////////////////////////
@@ -417,9 +402,11 @@ void TDet::Clear()
     h1_CV_wiSel  = NULL;
     h1_Var_noSel = NULL;
     h1_Var_wiSel = NULL;
-    
-    h1_weight = NULL;
-    h1_sampling = NULL;
+    h1_diff_Var2CV = NULL;
+    h1_binomial_err= NULL;
+      
+    h1_weight      = NULL;
+    h1_sampling    = NULL;
     h1_diff_weight = NULL;
   }
   else {      
@@ -427,6 +414,8 @@ void TDet::Clear()
     delete h1_CV_wiSel;
     delete h1_Var_noSel;
     delete h1_Var_wiSel;
+    delete h1_diff_Var2CV;
+    delete h1_binomial_err;
     
     delete h1_weight;
     delete h1_sampling;
@@ -516,7 +505,7 @@ void read_Tdet()
   func_canv_margin(canv_spectra, 0.15, 0.2,0.1,0.15);
   canv_spectra->SetLogy();
   
-  det_test->h1_CV_noSel->Draw("hist");
+  det_test->h1_CV_noSel->Draw("hist text75");
   det_test->h1_CV_noSel->SetMinimum(0.9);
   det_test->h1_CV_noSel->SetTitle("");
   det_test->h1_CV_noSel->SetLineColor(kBlack);
@@ -537,18 +526,16 @@ void read_Tdet()
   det_test->h1_Var_wiSel->SetLineColor(kRed);
   det_test->h1_Var_wiSel->SetMarkerColor(kRed);
 
+  det_test->h1_diff_Var2CV->Draw("same hist text0");
+  det_test->h1_diff_Var2CV->SetLineColor(kBlue);
+  det_test->h1_diff_Var2CV->SetMarkerColor(kBlue);
+
+  det_test->h1_binomial_err->Draw("same hist text75");
+  det_test->h1_binomial_err->SetLineColor(kOrange-3);
+  det_test->h1_binomial_err->SetMarkerColor(kOrange-3);
+    
   det_test->h1_CV_noSel->Draw("same axis");
 
-  TH1D *h1_diff_CV2Var = (TH1D*)det_test->h1_CV_wiSel->Clone("h1_diff_CV2Var");
-  h1_diff_CV2Var->Reset();
-  for(int ibin=1; ibin<=h1_diff_CV2Var->GetNbinsX(); ibin++) {
-    h1_diff_CV2Var->SetBinContent(ibin,
-    fabs(det_test->h1_CV_wiSel->GetBinContent(ibin)-det_test->h1_Var_wiSel->GetBinContent(ibin)) );
-  }
-  h1_diff_CV2Var->Draw("same hist text0");
-  h1_diff_CV2Var->SetLineColor(kBlue);
-  h1_diff_CV2Var->SetMarkerColor(kBlue);
-  
   ///////////
   
   roostr = "canv_matrix_cov_on_absdiff";
@@ -590,15 +577,39 @@ void read_Tdet()
     double reldiff = cov_root/(val_Var-val_CV);
     h1_cov2absdiff->SetBinContent( i+1, fabs(reldiff) );
   }
+  roostr = "h1_cov2Berr";
+  TH1D *h1_cov2Berr = new TH1D(roostr, roostr, bins_temp, low_temp, hgh_temp);
+  for(int i=0; i<bins_temp; i++) {
+    double cov_root = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
+    double Berr = det_test->h1_binomial_err->GetBinContent(i+1);
+    double reldiff = cov_root/Berr;
+    h1_cov2Berr->SetBinContent( i+1, reldiff );
+  }
+  double max_h1_cov2absdiff = h1_cov2absdiff->GetMaximum();
+  double max_h1_cov2Berr = h1_cov2Berr->GetMaximum();
+  if( max_h1_cov2absdiff<max_h1_cov2Berr ) max_h1_cov2absdiff = max_h1_cov2Berr;
+  
   roostr = "canv_h1_cov2absdiff";
   TCanvas *canv_h1_cov2absdiff = new TCanvas(roostr, roostr, 900, 650);
   func_canv_margin(canv_h1_cov2absdiff, 0.15, 0.2,0.1,0.15);
   h1_cov2absdiff->Draw("hist");
+  h1_cov2absdiff->SetMaximum(max_h1_cov2absdiff * 1.2);
+  h1_cov2absdiff->SetLineColor(kBlue);
   h1_cov2absdiff->SetTitle("");
   func_title_size(h1_cov2absdiff, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(h1_cov2absdiff, "E_{rec} (MeV) ", "|Sqrt(cov) / (DetVar-CV)|");
+  func_xy_title(h1_cov2absdiff, "E_{rec} (MeV) ", "Ratio");
   h1_cov2absdiff->GetXaxis()->SetNdivisions(506);
   h1_cov2absdiff->GetYaxis()->SetNdivisions(506);
+  
+  TF1 *f1_h1_cov2absdiff = new TF1("f1_h1_cov2absdiff", "1", 0, 1e6);
+  f1_h1_cov2absdiff->Draw("same");
+  f1_h1_cov2absdiff->SetLineColor(kBlack);
+  f1_h1_cov2absdiff->SetLineStyle(7);
+  
+  h1_cov2Berr->Draw("hist same");
+  h1_cov2Berr->SetLineColor(kOrange-3);
+
+  
   
   //////
   roostr = "h2_correlation_on_absdiff";
@@ -636,7 +647,9 @@ void read_Tdet()
   det_test->h1_CV_wiSel->Draw("same hist text75");
   det_test->h1_Var_wiSel->Draw("same hist text15");
   det_test->h1_CV_noSel->Draw("same axis");
-  h1_diff_CV2Var->Draw("same hist text0");
+  det_test->h1_diff_Var2CV->Draw("same hist text0");
+  det_test->h1_binomial_err->Draw("same hist text75");
+  det_test->h1_CV_noSel->Draw("same axis");
   
   TVirtualPad *pad_cov = canv_sum->cd(2);
   func_canv_margin(pad_cov, 0.15, 0.2,0.1,0.15);
@@ -649,7 +662,10 @@ void read_Tdet()
   TVirtualPad *pad_cov2absdiff = canv_sum->cd(4);
   func_canv_margin(pad_cov2absdiff, 0.15, 0.2,0.1,0.15);
   h1_cov2absdiff->Draw("hist");
-
+  f1_h1_cov2absdiff->Draw("same");
+  h1_cov2Berr->Draw("hist same");
+  h1_cov2absdiff->Draw("same axis");
+  
   canv_sum->SaveAs("canv_sum.png");
   
 }
