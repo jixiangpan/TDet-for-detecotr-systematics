@@ -272,10 +272,27 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
     
     h1_diff_Var2CV->SetBinContent( ibin, fabs(content_wiSel_Var-content_wiSel_CV) );
 
-    double val_p = content_wiSel_CV/content_noSel_CV;
-    double val_err = sqrt(  content_noSel_CV*val_p*(1-val_p) );
+    // double val_p = content_wiSel_CV/content_noSel_CV;
+    // double val_err = sqrt(  content_noSel_CV*val_p*(1-val_p) );
+    // val_err = ( (int)(val_err*100+0.5) )*1./100;
+    // h1_binomial_err->SetBinContent(ibin, val_err);
+
+    double sampleA_total = 0;
+    double sampleA_sub   = 0;
+    if( content_wiSel_CV>content_wiSel_Var ) {
+      sampleA_total = content_wiSel_CV;
+      sampleA_sub = (content_wiSel_CV - content_wiSel_Var);
+    }
+    else {
+      sampleA_total = content_wiSel_Var;
+      sampleA_sub = (content_wiSel_Var - content_wiSel_CV);
+    }
+    double val_p = sampleA_sub/sampleA_total;// probility of the non-selected events
+    double val_err = sqrt( sampleA_total*val_p*(1-val_p) );// binominal error of the non-selected events
     val_err = ( (int)(val_err*100+0.5) )*1./100;
     h1_binomial_err->SetBinContent(ibin, val_err);
+
+    
   }
   
   /////////////////////////////////////////////// Calculate covariance matrix
@@ -452,12 +469,29 @@ void read_Tdet()
 
   //////////////////////////////////////////////////////////////////////////////////
 
+  map<int, TString>map_bnb_numu_file_CV;
+  map_bnb_numu_file_CV[1] = "./data_det_syst_total/common_detvar/LYDown/numu_CV";
+  map_bnb_numu_file_CV[2] = "./data_det_syst_total/common_detvar/Recomb2/numu_CV";
+  map_bnb_numu_file_CV[3] = "./data_det_syst_total/common_detvar/SCE/numu_CV";
+  map_bnb_numu_file_CV[4] = "./data_det_syst_total/common_detvar/WireModThetaXZ/numu_CV";
+  map_bnb_numu_file_CV[5] = "./data_det_syst_total/common_detvar/WireModThetaYZ/numu_CV";
+  map_bnb_numu_file_CV[6] = "./data_det_syst_total/common_detvar/WireModX/numu_CV";
+  map_bnb_numu_file_CV[7] = "./data_det_syst_total/common_detvar/WireModYZ/numu_CV";
+  
+  map<int, TString>map_bnb_numu_file_Var;
+  map_bnb_numu_file_Var[1] = "./data_det_syst_total/common_detvar/LYDown/numu_Var";
+  map_bnb_numu_file_Var[2] = "./data_det_syst_total/common_detvar/Recomb2/numu_Var";
+  map_bnb_numu_file_Var[3] = "./data_det_syst_total/common_detvar/SCE/numu_Var";
+  map_bnb_numu_file_Var[4] = "./data_det_syst_total/common_detvar/WireModThetaXZ/numu_Var";
+  map_bnb_numu_file_Var[5] = "./data_det_syst_total/common_detvar/WireModThetaYZ/numu_Var";
+  map_bnb_numu_file_Var[6] = "./data_det_syst_total/common_detvar/WireModX/numu_Var";
+  map_bnb_numu_file_Var[7] = "./data_det_syst_total/common_detvar/WireModYZ/numu_Var";
+  
   //
   TDet *det_test = new TDet();
 
-  det_test->Clear();
-  
-  det_test->Exe("./data_det_syst_total/common_detvar/LYDown/numu_CV", "./data_det_syst_total/common_detvar/LYDown/numu_Var", 1, 1, 1000);
+  //det_test->Clear();  
+  //det_test->Exe("./data_det_syst_total/common_detvar/LYDown/numu_CV", "./data_det_syst_total/common_detvar/LYDown/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/Recomb2/numu_CV", "./data_det_syst_total/common_detvar/Recomb2/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/SCE/numu_CV", "./data_det_syst_total/common_detvar/SCE/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/WireModThetaXZ/numu_CV", "./data_det_syst_total/common_detvar/WireModThetaXZ/numu_Var", 1, 1, 1000);
@@ -465,207 +499,214 @@ void read_Tdet()
   //det_test->Exe("./data_det_syst_total/common_detvar/WireModX/numu_CV", "./data_det_syst_total/common_detvar/WireModX/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/WireModYZ/numu_CV", "./data_det_syst_total/common_detvar/WireModYZ/numu_Var", 1, 1, 1000);
 
-  
-  ////////////////////////////////////////////////////////////////////////////////// plotting
+  for(int idx=1; idx<=7; idx++) {
 
-  roostr = "canv_h1_weight";
-  TCanvas *canv_h1_weight = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_h1_weight, 0.15, 0.2,0.1,0.15);
-  det_test->h1_weight->Draw();
-  det_test->h1_weight->SetLineColor(kBlack);
-  //h1_weight->SetLineStyle(7);
-  func_title_size(det_test->h1_weight, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(det_test->h1_weight, "Event index", "Weight");
-  det_test->h1_weight->GetXaxis()->SetNdivisions(506);
-
-  roostr = "canv_h1_sampling";
-  TCanvas *canv_h1_sampling = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_h1_sampling, 0.15, 0.2,0.1,0.15);
-  det_test->h1_sampling->Draw();
-  det_test->h1_sampling->SetLineColor(kBlack);
-  //h1_sampling->SetLineStyle(7);
-  func_title_size(det_test->h1_sampling, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(det_test->h1_sampling, "Event index", "Weight");
-  det_test->h1_sampling->GetXaxis()->SetNdivisions(506);
-
-  roostr = "canv_h1_diff_weight";
-  TCanvas *canv_h1_diff_weight = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_h1_diff_weight, 0.15, 0.2,0.1,0.15);
-  det_test->h1_diff_weight->Draw();
-  det_test->h1_diff_weight->SetLineColor(kBlack);
-  //h1_diff_weight->SetLineStyle(7);
-  func_title_size(det_test->h1_diff_weight, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(det_test->h1_diff_weight, "Event index", "Diff of Weight");
-  det_test->h1_diff_weight->GetXaxis()->SetNdivisions(506);
-
-  ///////////
-  
-  roostr = "canv_spectra";
-  TCanvas *canv_spectra = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_spectra, 0.15, 0.2,0.1,0.15);
-  canv_spectra->SetLogy();
-  
-  det_test->h1_CV_noSel->Draw("hist text75");
-  det_test->h1_CV_noSel->SetMinimum(0.9);
-  det_test->h1_CV_noSel->SetTitle("");
-  det_test->h1_CV_noSel->SetLineColor(kBlack);
-  det_test->h1_CV_noSel->SetLineStyle(7);
-  func_title_size(det_test->h1_CV_noSel, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(det_test->h1_CV_noSel, "E_{rec} (MeV) ", "Entries");
-  det_test->h1_CV_noSel->GetXaxis()->SetNdivisions(506);
-  
-  det_test->h1_Var_noSel->Draw("same hist");
-  det_test->h1_Var_noSel->SetLineColor(kRed);
-  det_test->h1_Var_noSel->SetLineStyle(7);
-
-  det_test->h1_CV_wiSel->Draw("same hist text75");
-  det_test->h1_CV_wiSel->SetLineColor(kBlack);
-  det_test->h1_CV_wiSel->SetMarkerColor(kBlack);
-  
-  det_test->h1_Var_wiSel->Draw("same hist text15");
-  det_test->h1_Var_wiSel->SetLineColor(kRed);
-  det_test->h1_Var_wiSel->SetMarkerColor(kRed);
-
-  det_test->h1_diff_Var2CV->Draw("same hist text0");
-  det_test->h1_diff_Var2CV->SetLineColor(kBlue);
-  det_test->h1_diff_Var2CV->SetMarkerColor(kBlue);
-
-  det_test->h1_binomial_err->Draw("same hist text75");
-  det_test->h1_binomial_err->SetLineColor(kOrange-3);
-  det_test->h1_binomial_err->SetMarkerColor(kOrange-3);
+    cout<<endl<<" ---> processing DetSyst: "<<map_bnb_numu_file_CV[idx]<<endl<<endl;
     
-  det_test->h1_CV_noSel->Draw("same axis");
+    det_test->Clear(); 
+    det_test->Exe( map_bnb_numu_file_CV[idx], map_bnb_numu_file_Var[idx], 1, 1, 1000 );
+      
+    ////////////////////////////////////////////////////////////////////////////////// plotting
 
-  ///////////
+    roostr = "canv_h1_weight";
+    TCanvas *canv_h1_weight = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_h1_weight, 0.15, 0.2,0.1,0.15);
+    det_test->h1_weight->Draw();
+    det_test->h1_weight->SetLineColor(kBlack);
+    //h1_weight->SetLineStyle(7);
+    func_title_size(det_test->h1_weight, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(det_test->h1_weight, "Event index", "Weight");
+    det_test->h1_weight->GetXaxis()->SetNdivisions(506);
+
+    roostr = "canv_h1_sampling";
+    TCanvas *canv_h1_sampling = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_h1_sampling, 0.15, 0.2,0.1,0.15);
+    det_test->h1_sampling->Draw();
+    det_test->h1_sampling->SetLineColor(kBlack);
+    //h1_sampling->SetLineStyle(7);
+    func_title_size(det_test->h1_sampling, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(det_test->h1_sampling, "Event index", "Weight");
+    det_test->h1_sampling->GetXaxis()->SetNdivisions(506);
+
+    roostr = "canv_h1_diff_weight";
+    TCanvas *canv_h1_diff_weight = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_h1_diff_weight, 0.15, 0.2,0.1,0.15);
+    det_test->h1_diff_weight->Draw();
+    det_test->h1_diff_weight->SetLineColor(kBlack);
+    //h1_diff_weight->SetLineStyle(7);
+    func_title_size(det_test->h1_diff_weight, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(det_test->h1_diff_weight, "Event index", "Diff of Weight");
+    det_test->h1_diff_weight->GetXaxis()->SetNdivisions(506);
+
+    ///////////
   
-  roostr = "canv_matrix_cov_on_absdiff";
-  TCanvas *canv_matrix_cov_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_matrix_cov_on_absdiff, 0.15, 0.2,0.1,0.15);
-  det_test->matrix_cov_on_absdiff.Draw("colz");   
+    roostr = "canv_spectra";
+    TCanvas *canv_spectra = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_spectra, 0.15, 0.2,0.1,0.15);
+    canv_spectra->SetLogy();
+  
+    det_test->h1_CV_noSel->Draw("hist text75");
+    det_test->h1_CV_noSel->SetMinimum(0.9);
+    det_test->h1_CV_noSel->SetTitle("");
+    det_test->h1_CV_noSel->SetLineColor(kBlack);
+    det_test->h1_CV_noSel->SetLineStyle(7);
+    func_title_size(det_test->h1_CV_noSel, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(det_test->h1_CV_noSel, "E_{rec} (MeV) ", "Entries");
+    det_test->h1_CV_noSel->GetXaxis()->SetNdivisions(506);
+  
+    det_test->h1_Var_noSel->Draw("same hist");
+    det_test->h1_Var_noSel->SetLineColor(kRed);
+    det_test->h1_Var_noSel->SetLineStyle(7);
 
-  int bins_temp = det_test->h1_CV_noSel->GetNbinsX();
-  double low_temp = det_test->h1_CV_noSel->GetXaxis()->GetBinLowEdge(1);
-  double hgh_temp = det_test->h1_CV_noSel->GetXaxis()->GetBinUpEdge(bins_temp);
+    det_test->h1_CV_wiSel->Draw("same hist text75");
+    det_test->h1_CV_wiSel->SetLineColor(kBlack);
+    det_test->h1_CV_wiSel->SetMarkerColor(kBlack);
+  
+    det_test->h1_Var_wiSel->Draw("same hist text15");
+    det_test->h1_Var_wiSel->SetLineColor(kRed);
+    det_test->h1_Var_wiSel->SetMarkerColor(kRed);
 
-  //////
-  roostr = "h2_cov_on_absdiff";
-  TH2D *h2_cov_on_absdiff = new TH2D(roostr, roostr, bins_temp, low_temp, hgh_temp, bins_temp, low_temp, hgh_temp);
-  for(int i=0; i<bins_temp; i++) {
-    for(int j=0; j<bins_temp; j++) {
-      double content = det_test->matrix_cov_on_absdiff(i,j);
-      content = ((int)(content*10 + 0.5))*1./10;
-      h2_cov_on_absdiff->SetBinContent(i+1, j+1, content);
+    det_test->h1_diff_Var2CV->Draw("same hist text0");
+    det_test->h1_diff_Var2CV->SetLineColor(kBlue);
+    det_test->h1_diff_Var2CV->SetMarkerColor(kBlue);
+
+    det_test->h1_binomial_err->Draw("same hist text75");
+    det_test->h1_binomial_err->SetLineColor(kOrange-3);
+    det_test->h1_binomial_err->SetMarkerColor(kOrange-3);
+    
+    det_test->h1_CV_noSel->Draw("same axis");
+
+    ///////////
+  
+    roostr = "canv_matrix_cov_on_absdiff";
+    TCanvas *canv_matrix_cov_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_matrix_cov_on_absdiff, 0.15, 0.2,0.1,0.15);
+    det_test->matrix_cov_on_absdiff.Draw("colz");   
+
+    int bins_temp = det_test->h1_CV_noSel->GetNbinsX();
+    double low_temp = det_test->h1_CV_noSel->GetXaxis()->GetBinLowEdge(1);
+    double hgh_temp = det_test->h1_CV_noSel->GetXaxis()->GetBinUpEdge(bins_temp);
+
+    //////
+    roostr = "h2_cov_on_absdiff";
+    TH2D *h2_cov_on_absdiff = new TH2D(roostr, roostr, bins_temp, low_temp, hgh_temp, bins_temp, low_temp, hgh_temp);
+    for(int i=0; i<bins_temp; i++) {
+      for(int j=0; j<bins_temp; j++) {
+	double content = det_test->matrix_cov_on_absdiff(i,j);
+	content = ((int)(content*10 + 0.5))*1./10;
+	h2_cov_on_absdiff->SetBinContent(i+1, j+1, content);
+      }
     }
-  }
-  roostr = "canv_h2_cov_on_absdiff";
-  TCanvas *canv_h2_cov_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_h2_cov_on_absdiff, 0.15, 0.2,0.1,0.15);
-  h2_cov_on_absdiff->Draw("colz text");
-  h2_cov_on_absdiff->SetTitle("");
-  func_title_size(h2_cov_on_absdiff, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(h2_cov_on_absdiff, "E_{rec} (MeV) ", "E_{rec} (MeV)");
-  h2_cov_on_absdiff->GetXaxis()->SetNdivisions(506);
-  h2_cov_on_absdiff->GetYaxis()->SetNdivisions(506);
+    roostr = "canv_h2_cov_on_absdiff";
+    TCanvas *canv_h2_cov_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_h2_cov_on_absdiff, 0.15, 0.2,0.1,0.15);
+    h2_cov_on_absdiff->Draw("colz text");
+    h2_cov_on_absdiff->SetTitle("");
+    func_title_size(h2_cov_on_absdiff, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(h2_cov_on_absdiff, "E_{rec} (MeV) ", "E_{rec} (MeV)");
+    h2_cov_on_absdiff->GetXaxis()->SetNdivisions(506);
+    h2_cov_on_absdiff->GetYaxis()->SetNdivisions(506);
 
-  //////
-  roostr = "h1_cov2absdiff";
-  TH1D *h1_cov2absdiff = new TH1D(roostr, roostr, bins_temp, low_temp, hgh_temp);
-  for(int i=0; i<bins_temp; i++) {
-    double val_CV = det_test->h1_CV_wiSel->GetBinContent(i+1);
-    double val_Var = det_test->h1_Var_wiSel->GetBinContent(i+1);
-    double cov_root = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
-    double reldiff = cov_root/(val_Var-val_CV);
-    h1_cov2absdiff->SetBinContent( i+1, fabs(reldiff) );
-  }
-  roostr = "h1_cov2Berr";
-  TH1D *h1_cov2Berr = new TH1D(roostr, roostr, bins_temp, low_temp, hgh_temp);
-  for(int i=0; i<bins_temp; i++) {
-    double cov_root = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
-    double Berr = det_test->h1_binomial_err->GetBinContent(i+1);
-    double reldiff = cov_root/Berr;
-    h1_cov2Berr->SetBinContent( i+1, reldiff );
-  }
-  double max_h1_cov2absdiff = h1_cov2absdiff->GetMaximum();
-  double max_h1_cov2Berr = h1_cov2Berr->GetMaximum();
-  if( max_h1_cov2absdiff<max_h1_cov2Berr ) max_h1_cov2absdiff = max_h1_cov2Berr;
-  
-  roostr = "canv_h1_cov2absdiff";
-  TCanvas *canv_h1_cov2absdiff = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_h1_cov2absdiff, 0.15, 0.2,0.1,0.15);
-  h1_cov2absdiff->Draw("hist");
-  h1_cov2absdiff->SetMaximum(max_h1_cov2absdiff * 1.2);
-  h1_cov2absdiff->SetLineColor(kBlue);
-  h1_cov2absdiff->SetTitle("");
-  func_title_size(h1_cov2absdiff, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(h1_cov2absdiff, "E_{rec} (MeV) ", "Ratio");
-  h1_cov2absdiff->GetXaxis()->SetNdivisions(506);
-  h1_cov2absdiff->GetYaxis()->SetNdivisions(506);
-  
-  TF1 *f1_h1_cov2absdiff = new TF1("f1_h1_cov2absdiff", "1", 0, 1e6);
-  f1_h1_cov2absdiff->Draw("same");
-  f1_h1_cov2absdiff->SetLineColor(kBlack);
-  f1_h1_cov2absdiff->SetLineStyle(7);
-  
-  h1_cov2Berr->Draw("hist same");
-  h1_cov2Berr->SetLineColor(kOrange-3);
-
-  
-  
-  //////
-  roostr = "h2_correlation_on_absdiff";
-  TH2D *h2_correlation_on_absdiff = new TH2D(roostr, roostr, bins_temp, low_temp, hgh_temp, bins_temp, low_temp, hgh_temp);
-  for(int i=0; i<bins_temp; i++) {
-    for(int j=0; j<bins_temp; j++) {
-      double content = det_test->matrix_cov_on_absdiff(i,j);
-      double val_i = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
-      double val_j = sqrt( det_test->matrix_cov_on_absdiff(j,j) );
-      content = content/val_i/val_j;
-      content = ((int)(content*100 + 0.5))*1./100;
-      h2_correlation_on_absdiff->SetBinContent(i+1, j+1, content);
+    //////
+    roostr = "h1_cov2absdiff";
+    TH1D *h1_cov2absdiff = new TH1D(roostr, roostr, bins_temp, low_temp, hgh_temp);
+    for(int i=0; i<bins_temp; i++) {
+      double val_CV = det_test->h1_CV_wiSel->GetBinContent(i+1);
+      double val_Var = det_test->h1_Var_wiSel->GetBinContent(i+1);
+      double cov_root = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
+      double reldiff = cov_root/(val_Var-val_CV);
+      h1_cov2absdiff->SetBinContent( i+1, fabs(reldiff) );
     }
+    roostr = "h1_cov2Berr";
+    TH1D *h1_cov2Berr = new TH1D(roostr, roostr, bins_temp, low_temp, hgh_temp);
+    for(int i=0; i<bins_temp; i++) {
+      double cov_root = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
+      double Berr = det_test->h1_binomial_err->GetBinContent(i+1);
+      double reldiff = cov_root/Berr;
+      h1_cov2Berr->SetBinContent( i+1, reldiff );
+    }
+    double max_h1_cov2absdiff = h1_cov2absdiff->GetMaximum();
+    double max_h1_cov2Berr = h1_cov2Berr->GetMaximum();
+    if( max_h1_cov2absdiff<max_h1_cov2Berr ) max_h1_cov2absdiff = max_h1_cov2Berr;
+  
+    roostr = "canv_h1_cov2absdiff";
+    TCanvas *canv_h1_cov2absdiff = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_h1_cov2absdiff, 0.15, 0.2,0.1,0.15);
+    h1_cov2absdiff->Draw("hist");
+    h1_cov2absdiff->SetMaximum(max_h1_cov2absdiff * 1.2);
+    h1_cov2absdiff->SetLineColor(kBlue);
+    h1_cov2absdiff->SetTitle("");
+    func_title_size(h1_cov2absdiff, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(h1_cov2absdiff, "E_{rec} (MeV) ", "Ratio");
+    h1_cov2absdiff->GetXaxis()->SetNdivisions(506);
+    h1_cov2absdiff->GetYaxis()->SetNdivisions(506);
+  
+    TF1 *f1_h1_cov2absdiff = new TF1("f1_h1_cov2absdiff", "1", 0, 1e6);
+    f1_h1_cov2absdiff->Draw("same");
+    f1_h1_cov2absdiff->SetLineColor(kBlack);
+    f1_h1_cov2absdiff->SetLineStyle(9);
+  
+    h1_cov2Berr->Draw("hist same");
+    h1_cov2Berr->SetLineColor(kOrange-3);
+    
+    //////
+    roostr = "h2_correlation_on_absdiff";
+    TH2D *h2_correlation_on_absdiff = new TH2D(roostr, roostr, bins_temp, low_temp, hgh_temp, bins_temp, low_temp, hgh_temp);
+    for(int i=0; i<bins_temp; i++) {
+      for(int j=0; j<bins_temp; j++) {
+	double content = det_test->matrix_cov_on_absdiff(i,j);
+	double val_i = sqrt( det_test->matrix_cov_on_absdiff(i,i) );
+	double val_j = sqrt( det_test->matrix_cov_on_absdiff(j,j) );
+	content = content/val_i/val_j;
+	content = ((int)(content*100 + 0.5))*1./100;
+	h2_correlation_on_absdiff->SetBinContent(i+1, j+1, content);
+      }
+    }
+    roostr = "canv_h2_correlation_on_absdiff";
+    TCanvas *canv_h2_correlation_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
+    func_canv_margin(canv_h2_correlation_on_absdiff, 0.15, 0.2,0.1,0.15);
+    h2_correlation_on_absdiff->Draw("colz text");
+    h2_correlation_on_absdiff->SetTitle("");
+    func_title_size(h2_correlation_on_absdiff, 0.05, 0.05, 0.05, 0.05);
+    func_xy_title(h2_correlation_on_absdiff, "E_{rec} (MeV) ", "E_{rec} (MeV)");
+    h2_correlation_on_absdiff->GetXaxis()->SetNdivisions(506);
+    h2_correlation_on_absdiff->GetYaxis()->SetNdivisions(506);
+
+    /////////////////////////////////////////
+  
+    TCanvas *canv_sum = new TCanvas("canv_sum", "canv_sum", 1400, 1000);
+    canv_sum->Divide(2,2);
+
+    TVirtualPad *pad_spectra = canv_sum->cd(1);
+    pad_spectra->SetLogy();
+    func_canv_margin(pad_spectra, 0.15, 0.2,0.1,0.15);  
+    det_test->h1_CV_noSel->Draw("hist");  
+    det_test->h1_Var_noSel->Draw("same hist");
+    det_test->h1_CV_wiSel->Draw("same hist text75");
+    det_test->h1_Var_wiSel->Draw("same hist text15");
+    det_test->h1_CV_noSel->Draw("same axis");
+    det_test->h1_diff_Var2CV->Draw("same hist text0");
+    det_test->h1_binomial_err->Draw("same hist text75");
+    det_test->h1_CV_noSel->Draw("same axis");
+  
+    TVirtualPad *pad_cov = canv_sum->cd(2);
+    func_canv_margin(pad_cov, 0.15, 0.2,0.1,0.15);
+    h2_cov_on_absdiff->Draw("colz text");
+
+    TVirtualPad *pad_correlation = canv_sum->cd(3);
+    func_canv_margin(pad_correlation, 0.15, 0.2,0.1,0.15);
+    h2_correlation_on_absdiff->Draw("colz text");
+  
+    TVirtualPad *pad_cov2absdiff = canv_sum->cd(4);
+    func_canv_margin(pad_cov2absdiff, 0.15, 0.2,0.1,0.15);
+    h1_cov2absdiff->Draw("hist");
+    f1_h1_cov2absdiff->Draw("same");
+    f1_h1_cov2absdiff->SetLineStyle(9);
+    h1_cov2Berr->Draw("hist same");
+    h1_cov2absdiff->Draw("same axis");
+
+    roostr = TString::Format("canv_sum_%02d.png", idx);
+    canv_sum->SaveAs(roostr);
   }
-  roostr = "canv_h2_correlation_on_absdiff";
-  TCanvas *canv_h2_correlation_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
-  func_canv_margin(canv_h2_correlation_on_absdiff, 0.15, 0.2,0.1,0.15);
-  h2_correlation_on_absdiff->Draw("colz text");
-  h2_correlation_on_absdiff->SetTitle("");
-  func_title_size(h2_correlation_on_absdiff, 0.05, 0.05, 0.05, 0.05);
-  func_xy_title(h2_correlation_on_absdiff, "E_{rec} (MeV) ", "E_{rec} (MeV)");
-  h2_correlation_on_absdiff->GetXaxis()->SetNdivisions(506);
-  h2_correlation_on_absdiff->GetYaxis()->SetNdivisions(506);
-
-  /////////////////////////////////////////
-  
-  TCanvas *canv_sum = new TCanvas("canv_sum", "canv_sum", 1400, 1000);
-  canv_sum->Divide(2,2);
-
-  TVirtualPad *pad_spectra = canv_sum->cd(1);
-  pad_spectra->SetLogy();
-  func_canv_margin(pad_spectra, 0.15, 0.2,0.1,0.15);  
-  det_test->h1_CV_noSel->Draw("hist");  
-  det_test->h1_Var_noSel->Draw("same hist");
-  det_test->h1_CV_wiSel->Draw("same hist text75");
-  det_test->h1_Var_wiSel->Draw("same hist text15");
-  det_test->h1_CV_noSel->Draw("same axis");
-  det_test->h1_diff_Var2CV->Draw("same hist text0");
-  det_test->h1_binomial_err->Draw("same hist text75");
-  det_test->h1_CV_noSel->Draw("same axis");
-  
-  TVirtualPad *pad_cov = canv_sum->cd(2);
-  func_canv_margin(pad_cov, 0.15, 0.2,0.1,0.15);
-  h2_cov_on_absdiff->Draw("colz text");
-
-  TVirtualPad *pad_correlation = canv_sum->cd(3);
-  func_canv_margin(pad_correlation, 0.15, 0.2,0.1,0.15);
-  h2_correlation_on_absdiff->Draw("colz text");
-  
-  TVirtualPad *pad_cov2absdiff = canv_sum->cd(4);
-  func_canv_margin(pad_cov2absdiff, 0.15, 0.2,0.1,0.15);
-  h1_cov2absdiff->Draw("hist");
-  f1_h1_cov2absdiff->Draw("same");
-  h1_cov2Berr->Draw("hist same");
-  h1_cov2absdiff->Draw("same axis");
-  
-  canv_sum->SaveAs("canv_sum.png");
   
 }
