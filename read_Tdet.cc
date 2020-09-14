@@ -70,7 +70,7 @@ public:
   int num_DetVar;
   
   TMatrixD matrix_cov_on_absdiff;
-
+   
   TH1D *h1_CV_noSel;
   TH1D *h1_CV_wiSel;
   TH1D *h1_Var_noSel;
@@ -87,6 +87,15 @@ public:
   map<TString, double>map_total_index_Var_Erec;
   map<TString, double>map_CV_wiSel_Erec;
   map<TString, double>map_Var_wiSel_Erec;
+
+  map<int, TMatrixD>map_matrix_cov_on_absdiff;
+  map<int, TH1D*>map_h1_CV_noSel;
+  map<int, TH1D*>map_h1_CV_wiSel;
+  map<int, TH1D*>map_h1_Var_noSel;
+  map<int, TH1D*>map_h1_Var_wiSel;
+  map<int, TH1D*>map_h1_diff_Var2CV;
+  map<int, TH1D*>map_h1_binomial_err;
+  
 };
 
 
@@ -379,19 +388,31 @@ void TDet::Exe(TString file_CV, TString file_Var, bool flag_numu, bool flag_FC, 
     }
   }
 
-  TVectorD *vector_mean = (TVectorD*)principal_test.GetMeanValues();
-  int size_vector = vector_mean->GetNoElements();
-  for(int idx=0; idx<size_vector; idx++) {
-    double val_mean = (*vector_mean)(idx);
-    double val_nominal = h1_Var_wiSel->GetBinContent(idx+1) - h1_CV_wiSel->GetBinContent(idx+1);
-    double val_diff = val_mean - val_nominal;
-    cout<<TString::Format(" check mean: bin %2d, nominal %8.2f, toy %8.2f, diff %8.2f",
-			  idx+1, val_nominal, val_mean, val_diff
-			  )<<endl;    
-  }
+  // TVectorD *vector_mean = (TVectorD*)principal_test.GetMeanValues();
+  // int size_vector = vector_mean->GetNoElements();
+  // for(int idx=0; idx<size_vector; idx++) {
+  //   double val_mean = (*vector_mean)(idx);
+  //   double val_nominal = h1_Var_wiSel->GetBinContent(idx+1) - h1_CV_wiSel->GetBinContent(idx+1);
+  //   double val_diff = val_mean - val_nominal;
+  //   cout<<TString::Format(" check mean: bin %2d, nominal %8.2f, toy %8.2f, diff %8.2f",
+  // 			  idx+1, val_nominal, val_mean, val_diff
+  // 			  )<<endl;    
+  // }
 
   h1_diff_weight->Add( h1_weight, h1_sampling, 1, -1./ntoy );
     
+  ////////////////////////
+  
+  map_matrix_cov_on_absdiff[num_DetVar].ResizeTo(rows, rows);
+  map_matrix_cov_on_absdiff[num_DetVar] = matrix_cov_on_absdiff;
+
+  roostr = TString::Format("map_h1_CV_noSel_%02d", num_DetVar); map_h1_CV_noSel[num_DetVar] = (TH1D*)h1_CV_noSel->Clone(roostr);
+  roostr = TString::Format("map_h1_CV_wiSel_%02d", num_DetVar); map_h1_CV_wiSel[num_DetVar] = (TH1D*)h1_CV_wiSel->Clone(roostr);
+  roostr = TString::Format("map_h1_Var_noSel_%02d", num_DetVar); map_h1_Var_noSel[num_DetVar] = (TH1D*)h1_Var_noSel->Clone(roostr);
+  roostr = TString::Format("map_h1_Var_wiSel_%02d", num_DetVar); map_h1_Var_wiSel[num_DetVar] = (TH1D*)h1_Var_wiSel->Clone(roostr);
+  roostr = TString::Format("map_h1_diff_Var2CV_%02d", num_DetVar); map_h1_diff_Var2CV[num_DetVar] = (TH1D*)h1_diff_Var2CV->Clone(roostr);
+  roostr = TString::Format("map_h1_binomial_err_%02d", num_DetVar); map_h1_binomial_err[num_DetVar] = (TH1D*)h1_binomial_err->Clone(roostr);
+  
   ////////////////////////
   
   delete[] array_test;
@@ -499,15 +520,19 @@ void read_Tdet()
   //det_test->Exe("./data_det_syst_total/common_detvar/WireModX/numu_CV", "./data_det_syst_total/common_detvar/WireModX/numu_Var", 1, 1, 1000);
   //det_test->Exe("./data_det_syst_total/common_detvar/WireModYZ/numu_CV", "./data_det_syst_total/common_detvar/WireModYZ/numu_Var", 1, 1, 1000);
 
-  for(int idx=1; idx<=7; idx++) {
 
-    cout<<endl<<" ---> processing DetSyst: "<<map_bnb_numu_file_CV[idx]<<endl<<endl;
+  int nn_DetVar = 1;
+
+  
+  for(int idet=1; idet<=nn_DetVar; idet++) {
+
+    cout<<endl<<" ---> processing DetSyst: "<<map_bnb_numu_file_CV[idet]<<endl<<endl;
     
     det_test->Clear(); 
-    det_test->Exe( map_bnb_numu_file_CV[idx], map_bnb_numu_file_Var[idx], 1, 1, 1000 );
+    det_test->Exe( map_bnb_numu_file_CV[idet], map_bnb_numu_file_Var[idet], 1, 1, 500 );
       
     ////////////////////////////////////////////////////////////////////////////////// plotting
-
+    /*
     roostr = "canv_h1_weight";
     TCanvas *canv_h1_weight = new TCanvas(roostr, roostr, 900, 650);
     func_canv_margin(canv_h1_weight, 0.15, 0.2,0.1,0.15);
@@ -705,8 +730,160 @@ void read_Tdet()
     h1_cov2Berr->Draw("hist same");
     h1_cov2absdiff->Draw("same axis");
 
-    roostr = TString::Format("canv_sum_%02d.png", idx);
+    roostr = TString::Format("canv_sum_%02d.png", idet);
     canv_sum->SaveAs(roostr);
+    */
+
+    // cout<<TString::Format( " ---> check, CV_wiSel(1) %10.2f, Abs.Diff(1) %10.2f, cov(0,0) %10.2f",
+    // 			   det_test->map_h1_CV_wiSel[idet]->GetBinContent(1),
+    // 			   det_test->map_h1_diff_Var2CV[idet]->GetBinContent(1),
+    // 			   det_test->map_matrix_cov_on_absdiff[idet](0,0) )<<endl;
   }
+
+
+  // map_matrix_cov_on_absdiff[num_DetVar] = matrix_cov_on_absdiff;
+  // roostr = TString::Format("map_h1_CV_noSel_%02d", num_DetVar); map_h1_CV_noSel[num_DetVar] = (TH1D*)h1_CV_noSel->Clone(roostr);
+  // roostr = TString::Format("map_h1_CV_wiSel_%02d", num_DetVar); map_h1_CV_wiSel[num_DetVar] = (TH1D*)h1_CV_wiSel->Clone(roostr);
+  // roostr = TString::Format("map_h1_Var_noSel_%02d", num_DetVar); map_h1_Var_noSel[num_DetVar] = (TH1D*)h1_Var_noSel->Clone(roostr);
+  // roostr = TString::Format("map_h1_Var_wiSel_%02d", num_DetVar); map_h1_Var_wiSel[num_DetVar] = (TH1D*)h1_Var_wiSel->Clone(roostr);
+  // roostr = TString::Format("map_h1_diff_Var2CV_%02d", num_DetVar); map_h1_diff_Var2CV[num_DetVar] = (TH1D*)h1_diff_Var2CV->Clone(roostr);
+  // roostr = TString::Format("map_h1_binomial_err_%02d", num_DetVar); map_h1_binomial_err[num_DetVar] = (TH1D*)h1_binomial_err->Clone(roostr);
+
+  //////////////////////////////////////////////////// Generating covariance matrix
+
+  int nn_bin_test = nn_DetVar * det_test->map_h1_CV_wiSel[1]->GetNbinsX();
+  int line_test = 0;
+  
+  TPrincipal principal_test(nn_bin_test, "ND");  
+  double *array_test = new double[nn_bin_test];
+
+  map<int, double>map_val_CV;
+  
+  ///  
+  int nn_Toy = 1000;
+
+  for( int itoy=1; itoy<=nn_Toy; itoy++ ) {
+
+    ///
+    line_test = 0;
+    for(int idx=1; idx<=nn_bin_test; idx++) array_test[idx-1] = 0;
+
+    ///
+    TRandom *random3 = new TRandom3(0);    
+    double rel_random = random3->Gaus(0, 1);
+
+    ///
+    for(int idet=1; idet<=nn_DetVar; idet++) {
+
+      int nn_bin = det_test->map_h1_CV_wiSel[idet]->GetNbinsX();
+
+
+
+      
+      TMatrixDSym DSmatrix_cov_DetVar(nn_bin);
+      for(int ibin=0; ibin<nn_bin; ibin++) {
+	for(int jbin=0; jbin<nn_bin; jbin++) {
+	  DSmatrix_cov_DetVar(ibin, jbin) = det_test->map_matrix_cov_on_absdiff[idet](ibin, jbin);
+	}
+      }
+      TMatrixDSymEigen DSmatrix_eigen_DetVar( DSmatrix_cov_DetVar );
+      TMatrixD matrix_eigenvector_DetVar = DSmatrix_eigen_DetVar.GetEigenVectors();
+      TMatrixD matrix_eigenvector_DetVar_T(nn_bin, nn_bin);
+      matrix_eigenvector_DetVar_T.Transpose( matrix_eigenvector_DetVar );
+      TMatrixD matrix_cov_DetVar_diag = matrix_eigenvector_DetVar_T * (det_test->map_matrix_cov_on_absdiff[idet]) * matrix_eigenvector_DetVar;
+      for(int i=0; i<nn_bin; i++) {
+	for(int j=0; j<nn_bin; j++) {
+	  if( matrix_cov_DetVar_diag(i,j)<1e-8 ) matrix_cov_DetVar_diag(i,j) = 0;
+	}
+      }
+      TMatrixD matrix_element(nn_bin, 1);    
+      for(int j=0; j<nn_bin; j++) {
+	matrix_element(j,0) = random3->Gaus( 0, sqrt( matrix_cov_DetVar_diag(j,j) ) );      
+      }
+      TMatrixD matrix_variation = matrix_eigenvector_DetVar * matrix_element;      
+      map<int, double>user_array;
+      for(int idx=0; idx<nn_bin; idx++) user_array[idx] = matrix_variation(idx, 0);
+
+      
+      
+      
+      for(int ibin=1; ibin<=nn_bin; ibin++) {
+	double val_CV = det_test->map_h1_CV_wiSel[idet]->GetBinContent(ibin);
+	double val_Var = det_test->map_h1_Var_wiSel[idet]->GetBinContent(ibin);
+	double val_AbsDiff = val_Var - val_CV;
+	val_AbsDiff += user_array[ibin];
+	double val_variation = rel_random * val_AbsDiff;
+	double val_CV_with_variation = val_CV + val_variation;
+	
+	///
+	line_test++;
+	array_test[line_test-1] = val_CV_with_variation;
+	
+	map_val_CV[line_test-1] = val_CV;
+      }// ibin
+      
+    }// idet
+
+    principal_test.AddRow( array_test );
+
+    ///
+    delete random3;
+    
+  }// itoy
+  
+  
+  ///////////////////
+  
+  TMatrixD *tt_matrix_cov_on_absdiff = (TMatrixD *)principal_test.GetCovarianceMatrix();
+  int rows = tt_matrix_cov_on_absdiff->GetNrows();
+
+  TMatrixD matrix_cov_on_absdiff(2,2);
+  matrix_cov_on_absdiff.ResizeTo(rows, rows);
+  
+  for(int i=0; i<rows; i++) {
+    for(int j=0; j<rows; j++) {
+      if(i<j) (*tt_matrix_cov_on_absdiff)(i,j) = (*tt_matrix_cov_on_absdiff)(j,i);
+      matrix_cov_on_absdiff(i,j) = (*tt_matrix_cov_on_absdiff)(i,j);
+    }
+  }
+  
+  ////////////////////
+  TH2D *h2_matrix_cov_on_absdiff = new TH2D(roostr, roostr, rows, 0.5, rows+0.5, rows, 0.5, rows+0.5);
+  TH2D *h2_matrix_correlation_on_absdiff = new TH2D(roostr, roostr, rows, 0.5, rows+0.5, rows, 0.5, rows+0.5);
+  
+  for(int i=0; i<rows; i++) {
+    for(int j=0; j<rows; j++) {
+      
+      double val_cov = matrix_cov_on_absdiff(i,j);
+      double sigma_i = sqrt( matrix_cov_on_absdiff(i,i) );
+      double sigma_j = sqrt( matrix_cov_on_absdiff(j,j) );      
+      
+      h2_matrix_cov_on_absdiff->SetBinContent(i+1,j+1, val_cov/map_val_CV[i]/map_val_CV[j]);
+
+      h2_matrix_correlation_on_absdiff->SetBinContent( i+1,j+1, val_cov/sigma_i/sigma_j );
+    }
+  }
+
+  
+  roostr = "canv_h2_matrix_correlation_on_absdiff";
+  TCanvas *canv_h2_matrix_correlation_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
+  func_canv_margin(canv_h2_matrix_correlation_on_absdiff, 0.15, 0.2,0.1,0.15);
+  h2_matrix_correlation_on_absdiff->Draw("colz");
+  h2_matrix_correlation_on_absdiff->SetTitle("");
+  func_title_size(h2_matrix_correlation_on_absdiff, 0.05, 0.05, 0.05, 0.05);
+  func_xy_title(h2_matrix_correlation_on_absdiff, "Index", "Index");
+  h2_matrix_correlation_on_absdiff->GetXaxis()->SetNdivisions(506);
+  h2_matrix_correlation_on_absdiff->GetYaxis()->SetNdivisions(506);
+
+  roostr = "canv_h2_matrix_cov_on_absdiff";
+  TCanvas *canv_h2_matrix_cov_on_absdiff = new TCanvas(roostr, roostr, 900, 650);
+  func_canv_margin(canv_h2_matrix_cov_on_absdiff, 0.15, 0.2,0.1,0.15);
+  h2_matrix_cov_on_absdiff->Draw("colz");
+  h2_matrix_cov_on_absdiff->SetTitle("");
+  func_title_size(h2_matrix_cov_on_absdiff, 0.05, 0.05, 0.05, 0.05);
+  func_xy_title(h2_matrix_cov_on_absdiff, "Index", "Index");
+  h2_matrix_cov_on_absdiff->GetXaxis()->SetNdivisions(506);
+  h2_matrix_cov_on_absdiff->GetYaxis()->SetNdivisions(506);
+
   
 }
