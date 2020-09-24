@@ -398,13 +398,21 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
   
   ///////////////////////////////////////////////
 
+  int user_nbins_hist_nue  = nbins_hist_nue;
+  double user_low_hist_nue = low_hist_nue;
+  double user_hgh_hist_nue = hgh_hist_nue;
+  
+  int user_nbins_hist_numu  = nbins_hist_numu;
+  double user_low_hist_numu = low_hist_numu;
+  double user_hgh_hist_numu = hgh_hist_numu;
+  
   roostr = "h1_basic_nue";
-  TH1D *h1_basic_nue = new TH1D(roostr, roostr, nbins_hist_nue, low_hist_nue, hgh_hist_nue);  
+  TH1D *h1_basic_nue = new TH1D(roostr, roostr, user_nbins_hist_nue, user_low_hist_nue, user_hgh_hist_nue);  
   roostr = "h1_basic_numu";
-  TH1D *h1_basic_numu = new TH1D(roostr, roostr, nbins_hist_numu, low_hist_numu, hgh_hist_numu);
+  TH1D *h1_basic_numu = new TH1D(roostr, roostr, user_nbins_hist_numu, user_low_hist_numu, user_hgh_hist_numu);
 
 
-  int bins_basic = nbins_hist_numu + nbins_hist_numu + nbins_hist_nue + nbins_hist_nue;// channels
+  int bins_basic = user_nbins_hist_numu + user_nbins_hist_numu + user_nbins_hist_nue + user_nbins_hist_nue;// channels
   double low_basic = 0.5;
   double hgh_basic = bins_basic+0.5;
 
@@ -429,22 +437,22 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
     int index_basic_numu = h1_basic_numu->FindBin(Erec);
     int index_basic_nue = h1_basic_nue->FindBin(Erec);
 
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {
       int eff_index = index_basic_numu + 0;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+      eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
     }
     
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {
-      int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {
+      int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+      eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
     }
     
     /////////////// numu       
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {      
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {      
       if( status==1 && post_generic==1 && numuCC==1 ) {
         if( is_FC==1 ) {
           map_CV_wiSel_Erec_bnbnu_numu_FC[roostr] = Erec;
@@ -453,23 +461,23 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
         }
         else {// PC
           map_CV_wiSel_Erec_bnbnu_numu_PC[roostr] = Erec;
-          int eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+          int eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
           h1_CV_wiSel->Fill( eff_index-0.5, weight );
         }
       } 
     }
  
     /////////////// nue       
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {      
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {      
       if( status==1 && post_generic==1 && nueBDT==1 ) {
         if( is_FC==1 ) {
           map_CV_wiSel_Erec_bnbnu_nue_FC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_CV_wiSel->Fill( eff_index-0.5, weight );
         }
         else {// PC
           map_CV_wiSel_Erec_bnbnu_nue_PC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_CV_wiSel->Fill( eff_index-0.5, weight );
         }
       } 
@@ -491,22 +499,22 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
     int index_basic_numu = h1_basic_numu->FindBin(Erec);
     int index_basic_nue = h1_basic_nue->FindBin(Erec);
 
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {
       int eff_index = index_basic_numu + 0;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+      eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
     }
     
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {
-      int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {
+      int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+      eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
     }
     
     /////////////// numu       
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {      
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {      
       if( status==1 && post_generic==1 && numuCC==1 ) {
         if( is_FC==1 ) {
           map_Var_wiSel_Erec_bnbnu_numu_FC[roostr] = Erec;
@@ -515,23 +523,23 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
         }
         else {// PC
           map_Var_wiSel_Erec_bnbnu_numu_PC[roostr] = Erec;
-          int eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+          int eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
           h1_Var_wiSel->Fill( eff_index-0.5, weight );
         }
       } 
     }
  
     /////////////// nue       
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {      
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {      
       if( status==1 && post_generic==1 && nueBDT==1 ) {
         if( is_FC==1 ) {
           map_Var_wiSel_Erec_bnbnu_nue_FC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_Var_wiSel->Fill( eff_index-0.5, weight );
         }
         else {// PC
           map_Var_wiSel_Erec_bnbnu_nue_PC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_Var_wiSel->Fill( eff_index-0.5, weight );   
         }
       } 
@@ -623,10 +631,10 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
       int index_basic_numu_CV = h1_basic_numu->FindBin(CV_Erec);
       int index_basic_nue_CV = h1_basic_nue->FindBin(CV_Erec);
       int eff_index_numu_CV_FC = index_basic_numu_CV + 0;// ---> FlagIndex
-      int eff_index_numu_CV_PC = index_basic_numu_CV + nbins_hist_numu;// ---> FlagIndex
-      int eff_index_nue_CV_FC = index_basic_nue_CV + nbins_hist_numu*2;// ---> FlagIndex
-      int eff_index_nue_CV_PC = index_basic_nue_CV + nbins_hist_nue + nbins_hist_numu*2;   // ---> FlagIndex  
-      if( index_basic_numu_CV>=1 && index_basic_numu_CV<=nbins_hist_numu ) {
+      int eff_index_numu_CV_PC = index_basic_numu_CV + user_nbins_hist_numu;// ---> FlagIndex
+      int eff_index_nue_CV_FC = index_basic_nue_CV + user_nbins_hist_numu*2;// ---> FlagIndex
+      int eff_index_nue_CV_PC = index_basic_nue_CV + user_nbins_hist_nue + user_nbins_hist_numu*2;   // ---> FlagIndex  
+      if( index_basic_numu_CV>=1 && index_basic_numu_CV<=user_nbins_hist_numu ) {
         if( map_CV_wiSel_Erec_bnbnu_numu_FC.find(roostr)!=map_CV_wiSel_Erec_bnbnu_numu_FC.end() ) {
           array_CV[eff_index_numu_CV_FC -1] += 1;
         }
@@ -634,7 +642,7 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
           array_CV[eff_index_numu_CV_PC -1] += 1;
         }       
       }
-      if( index_basic_nue_CV>=1 && index_basic_nue_CV<=nbins_hist_nue ) {
+      if( index_basic_nue_CV>=1 && index_basic_nue_CV<=user_nbins_hist_nue ) {
         if( map_CV_wiSel_Erec_bnbnu_nue_FC.find(roostr)!=map_CV_wiSel_Erec_bnbnu_nue_FC.end() ) {
           array_CV[eff_index_nue_CV_FC -1] += 1;
         }
@@ -648,10 +656,10 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
       int index_basic_numu_Var = h1_basic_numu->FindBin(Var_Erec);
       int index_basic_nue_Var = h1_basic_nue->FindBin(Var_Erec);
       int eff_index_numu_Var_FC = index_basic_numu_Var + 0;// ---> FlagIndex
-      int eff_index_numu_Var_PC = index_basic_numu_Var + nbins_hist_numu;// ---> FlagIndex
-      int eff_index_nue_Var_FC = index_basic_nue_Var + nbins_hist_numu*2;// ---> FlagIndex
-      int eff_index_nue_Var_PC = index_basic_nue_Var + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex      
-      if( index_basic_numu_Var>=1 && index_basic_numu_Var<=nbins_hist_numu ) {
+      int eff_index_numu_Var_PC = index_basic_numu_Var + user_nbins_hist_numu;// ---> FlagIndex
+      int eff_index_nue_Var_FC = index_basic_nue_Var + user_nbins_hist_numu*2;// ---> FlagIndex
+      int eff_index_nue_Var_PC = index_basic_nue_Var + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex      
+      if( index_basic_numu_Var>=1 && index_basic_numu_Var<=user_nbins_hist_numu ) {
         if( map_Var_wiSel_Erec_bnbnu_numu_FC.find(roostr)!=map_Var_wiSel_Erec_bnbnu_numu_FC.end() ) {
           array_Var[eff_index_numu_Var_FC -1] += 1;
         }
@@ -659,7 +667,7 @@ void TDet::Exe_channels_from_bnbnu(TString file_CV, TString file_Var, int idet, 
           array_Var[eff_index_numu_Var_PC -1] += 1;
         }       
       }
-      if( index_basic_nue_Var>=1 && index_basic_nue_Var<=nbins_hist_nue ) {
+      if( index_basic_nue_Var>=1 && index_basic_nue_Var<=user_nbins_hist_nue ) {
         if( map_Var_wiSel_Erec_bnbnu_nue_FC.find(roostr)!=map_Var_wiSel_Erec_bnbnu_nue_FC.end() ) {
           array_Var[eff_index_nue_Var_FC -1] += 1;        
         }
@@ -970,13 +978,21 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
   
   ///////////////////////////////////////////////
 
+  int user_nbins_hist_nue  = nbins_hist_nue;
+  double user_low_hist_nue = low_hist_nue;
+  double user_hgh_hist_nue = hgh_hist_nue;
+  
+  int user_nbins_hist_numu  = nbins_hist_nue;/// LEE
+  double user_low_hist_numu = low_hist_nue;
+  double user_hgh_hist_numu = hgh_hist_nue;
+  
   roostr = "h1_basic_nue";
-  TH1D *h1_basic_nue = new TH1D(roostr, roostr, nbins_hist_nue, low_hist_nue, hgh_hist_nue);  
-  roostr = "h1_basic_numu";// LEE
-  TH1D *h1_basic_numu = new TH1D(roostr, roostr, nbins_hist_nue, low_hist_nue, hgh_hist_nue);
+  TH1D *h1_basic_nue = new TH1D(roostr, roostr, user_nbins_hist_nue, user_low_hist_nue, user_hgh_hist_nue);  
+  roostr = "h1_basic_numu";
+  TH1D *h1_basic_numu = new TH1D(roostr, roostr, user_nbins_hist_numu, user_low_hist_numu, user_hgh_hist_numu);
 
 
-  int bins_basic = nbins_hist_numu + nbins_hist_numu + nbins_hist_nue + nbins_hist_nue;// channels
+  int bins_basic = user_nbins_hist_numu + user_nbins_hist_numu + user_nbins_hist_nue + user_nbins_hist_nue;// channels
   double low_basic = 0.5;
   double hgh_basic = bins_basic+0.5;
 
@@ -1001,22 +1017,22 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
     int index_basic_numu = h1_basic_numu->FindBin(Erec);
     int index_basic_nue = h1_basic_nue->FindBin(Erec);
 
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {
       int eff_index = index_basic_numu + 0;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+      eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
     }
     
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {
-      int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {
+      int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+      eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_CV_noSel->Fill( eff_index-0.5, weight );
     }
     
     /////////////// numu       
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {      
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {      
       if( status==1 && post_generic==1 && nueBDT==1 ) {
         if( is_FC==1 ) {
           map_CV_wiSel_Erec_bnbnu_numu_FC[roostr] = Erec;
@@ -1025,23 +1041,23 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
         }
         else {// PC
           map_CV_wiSel_Erec_bnbnu_numu_PC[roostr] = Erec;
-          int eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+          int eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
           h1_CV_wiSel->Fill( eff_index-0.5, weight );
         }
       } 
     }
  
     /////////////// nue       
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {      
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {      
       if( status==1 && post_generic==1 && nueBDT==1 ) {
         if( is_FC==1 ) {
           map_CV_wiSel_Erec_bnbnu_nue_FC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_CV_wiSel->Fill( eff_index-0.5, weight );
         }
         else {// PC
           map_CV_wiSel_Erec_bnbnu_nue_PC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_CV_wiSel->Fill( eff_index-0.5, weight );
         }
       } 
@@ -1063,22 +1079,22 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
     int index_basic_numu = h1_basic_numu->FindBin(Erec);
     int index_basic_nue = h1_basic_nue->FindBin(Erec);
 
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {
       int eff_index = index_basic_numu + 0;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+      eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
     }
     
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {
-      int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {
+      int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
-      eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+      eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
       h1_Var_noSel->Fill( eff_index-0.5, weight );
     }
     
     /////////////// numu       
-    if( index_basic_numu>=1 && index_basic_numu<=nbins_hist_numu ) {      
+    if( index_basic_numu>=1 && index_basic_numu<=user_nbins_hist_numu ) {      
       if( status==1 && post_generic==1 && nueBDT==1 ) {
         if( is_FC==1 ) {
           map_Var_wiSel_Erec_bnbnu_numu_FC[roostr] = Erec;
@@ -1087,23 +1103,23 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
         }
         else {// PC
           map_Var_wiSel_Erec_bnbnu_numu_PC[roostr] = Erec;
-          int eff_index = index_basic_numu + nbins_hist_numu;// ---> FlagIndex
+          int eff_index = index_basic_numu + user_nbins_hist_numu;// ---> FlagIndex
           h1_Var_wiSel->Fill( eff_index-0.5, weight );
         }
       } 
     }
  
     /////////////// nue       
-    if( index_basic_nue>=1 && index_basic_nue<=nbins_hist_nue ) {      
+    if( index_basic_nue>=1 && index_basic_nue<=user_nbins_hist_nue ) {      
       if( status==1 && post_generic==1 && nueBDT==1 ) {
         if( is_FC==1 ) {
           map_Var_wiSel_Erec_bnbnu_nue_FC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_Var_wiSel->Fill( eff_index-0.5, weight );
         }
         else {// PC
           map_Var_wiSel_Erec_bnbnu_nue_PC[roostr] = Erec;
-          int eff_index = index_basic_nue + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex
+          int eff_index = index_basic_nue + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex
           h1_Var_wiSel->Fill( eff_index-0.5, weight );   
         }
       } 
@@ -1195,10 +1211,10 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
       int index_basic_numu_CV = h1_basic_numu->FindBin(CV_Erec);
       int index_basic_nue_CV = h1_basic_nue->FindBin(CV_Erec);
       int eff_index_numu_CV_FC = index_basic_numu_CV + 0;// ---> FlagIndex
-      int eff_index_numu_CV_PC = index_basic_numu_CV + nbins_hist_numu;// ---> FlagIndex
-      int eff_index_nue_CV_FC = index_basic_nue_CV + nbins_hist_numu*2;// ---> FlagIndex
-      int eff_index_nue_CV_PC = index_basic_nue_CV + nbins_hist_nue + nbins_hist_numu*2;   // ---> FlagIndex  
-      if( index_basic_numu_CV>=1 && index_basic_numu_CV<=nbins_hist_numu ) {
+      int eff_index_numu_CV_PC = index_basic_numu_CV + user_nbins_hist_numu;// ---> FlagIndex
+      int eff_index_nue_CV_FC = index_basic_nue_CV + user_nbins_hist_numu*2;// ---> FlagIndex
+      int eff_index_nue_CV_PC = index_basic_nue_CV + user_nbins_hist_nue + user_nbins_hist_numu*2;   // ---> FlagIndex  
+      if( index_basic_numu_CV>=1 && index_basic_numu_CV<=user_nbins_hist_numu ) {
         if( map_CV_wiSel_Erec_bnbnu_numu_FC.find(roostr)!=map_CV_wiSel_Erec_bnbnu_numu_FC.end() ) {
           array_CV[eff_index_numu_CV_FC -1] += 1;
         }
@@ -1206,7 +1222,7 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
           array_CV[eff_index_numu_CV_PC -1] += 1;
         }       
       }
-      if( index_basic_nue_CV>=1 && index_basic_nue_CV<=nbins_hist_nue ) {
+      if( index_basic_nue_CV>=1 && index_basic_nue_CV<=user_nbins_hist_nue ) {
         if( map_CV_wiSel_Erec_bnbnu_nue_FC.find(roostr)!=map_CV_wiSel_Erec_bnbnu_nue_FC.end() ) {
           array_CV[eff_index_nue_CV_FC -1] += 1;
         }
@@ -1220,10 +1236,10 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
       int index_basic_numu_Var = h1_basic_numu->FindBin(Var_Erec);
       int index_basic_nue_Var = h1_basic_nue->FindBin(Var_Erec);
       int eff_index_numu_Var_FC = index_basic_numu_Var + 0;// ---> FlagIndex
-      int eff_index_numu_Var_PC = index_basic_numu_Var + nbins_hist_numu;// ---> FlagIndex
-      int eff_index_nue_Var_FC = index_basic_nue_Var + nbins_hist_numu*2;// ---> FlagIndex
-      int eff_index_nue_Var_PC = index_basic_nue_Var + nbins_hist_nue + nbins_hist_numu*2;// ---> FlagIndex      
-      if( index_basic_numu_Var>=1 && index_basic_numu_Var<=nbins_hist_numu ) {
+      int eff_index_numu_Var_PC = index_basic_numu_Var + user_nbins_hist_numu;// ---> FlagIndex
+      int eff_index_nue_Var_FC = index_basic_nue_Var + user_nbins_hist_numu*2;// ---> FlagIndex
+      int eff_index_nue_Var_PC = index_basic_nue_Var + user_nbins_hist_nue + user_nbins_hist_numu*2;// ---> FlagIndex      
+      if( index_basic_numu_Var>=1 && index_basic_numu_Var<=user_nbins_hist_numu ) {
         if( map_Var_wiSel_Erec_bnbnu_numu_FC.find(roostr)!=map_Var_wiSel_Erec_bnbnu_numu_FC.end() ) {
           array_Var[eff_index_numu_Var_FC -1] += 1;
         }
@@ -1231,7 +1247,7 @@ void TDet::Exe_channels_from_intrinsic(TString file_CV, TString file_Var, int id
           array_Var[eff_index_numu_Var_PC -1] += 1;
         }       
       }
-      if( index_basic_nue_Var>=1 && index_basic_nue_Var<=nbins_hist_nue ) {
+      if( index_basic_nue_Var>=1 && index_basic_nue_Var<=user_nbins_hist_nue ) {
         if( map_Var_wiSel_Erec_bnbnu_nue_FC.find(roostr)!=map_Var_wiSel_Erec_bnbnu_nue_FC.end() ) {
           array_Var[eff_index_nue_Var_FC -1] += 1;        
         }
@@ -1986,7 +2002,7 @@ void read_Tdet()
   
   det_test->Set_numu_hist(15, 100, 2350);
 
-  det_test->ntoy = 1000;
+  det_test->ntoy = 100;
 
   for(int idet=5; idet<=5; idet++) {
 
